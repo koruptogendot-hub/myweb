@@ -1,109 +1,203 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Send Gmail — Stealth</title>
-  <link rel="stylesheet" href="style.css">
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Send Gmail — Stealth</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap');
+  :root{
+    --bg:#070707; --panel:#0b0b0b; --neon:#00ff99; --muted:#9adbb7;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0;font-family:Orbitron,system-ui,Segoe UI,Roboto,Arial;color:#e8fff4;background:linear-gradient(135deg,#030303,#0a0a0a)}
+  canvas#bg{position:fixed;inset:0;z-index:0;display:block}
+  .wrap{position:relative;z-index:2;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:40px}
+  .card{width:980px;max-width:96%;background:linear-gradient(180deg,rgba(255,255,255,0.02),rgba(255,255,255,0.01));border-radius:14px;padding:18px;border:1px solid rgba(0,255,153,0.04);box-shadow:0 20px 60px rgba(0,0,0,0.6);display:grid;grid-template-columns:320px 1fr;gap:18px;align-items:start}
+  .left{padding:8px}
+  .brand{font-size:20px;color:var(--neon);letter-spacing:2px;margin-bottom:6px}
+  .subtitle{color:var(--muted);font-size:13px;margin-bottom:12px}
+  .gmail-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+  .gmail-btn{background:#0e0e0e;border-radius:10px;padding:12px;display:flex;align-items:center;gap:10px;cursor:pointer;border:1px solid rgba(255,255,255,0.02);transition:transform .16s,box-shadow .16s}
+  .gmail-btn:hover{transform:translateY(-4px);box-shadow:0 12px 30px rgba(0,255,153,0.08)}
+  .gmail-btn.active{outline:2px solid rgba(0,255,153,0.12);box-shadow:0 18px 50px rgba(0,255,153,0.08)}
+  .gmail-icon{width:44px;height:44px;border-radius:8px;background:linear-gradient(90deg,#fff,#eee);display:flex;align-items:center;justify-content:center;font-weight:700;color:#000}
+  .gmail-label{font-size:14px;color:#dfffe6}
+  .right{padding:8px}
+  .input{width:100%;padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,0.03);background:#0b0b0b;color:#eafff4;font-size:14px}
+  .note{font-size:13px;color:var(--muted);margin-top:8px}
+  .send-row{display:flex;gap:10px;align-items:center;margin-top:12px}
+  .btn-send{padding:12px 18px;border-radius:10px;border:none;background:linear-gradient(90deg,var(--neon),#00ccff);color:#001;font-weight:800;cursor:pointer;box-shadow:0 10px 30px rgba(0,255,153,0.08)}
+  .btn-send[disabled]{opacity:0.6;cursor:not-allowed}
+  .progress{height:10px;background:#060606;border-radius:8px;margin-top:12px;overflow:hidden;border:1px solid rgba(255,255,255,0.02)}
+  .progress-bar{height:100%;width:0%;background:linear-gradient(90deg,rgba(0,255,153,0.08),rgba(0,204,255,0.08));transition:width .45s}
+  .result{margin-top:12px;padding:12px;border-radius:8px;font-size:14px;display:none}
+  .result.success{background:rgba(0,255,153,0.05);border:1px solid rgba(0,255,153,0.1);color:#dfffe6}
+  .result.failed{background:rgba(255,80,80,0.04);border:1px solid rgba(255,80,80,0.12);color:#ffdede}
+  .small{font-size:12px;color:#a8e9c6}
+  @media(max-width:880px){ .card{grid-template-columns:1fr; padding:14px} .left{order:2} .right{order:1} .gmail-grid{grid-template-columns:repeat(5,1fr)}}
+</style>
 </head>
 <body>
-  <!-- Background Canvas -->
-  <canvas id="bgLines"></canvas>
+<canvas id="bg"></canvas>
 
-  <!-- Main App -->
-  <main id="app" class="app">
-    <header class="app-header">
-      <h1 class="brand">SEND GMAIL</h1>
-      <p class="tag">Stealth Mode • Animated • Responsive</p>
-    </header>
+<div class="wrap">
+  <div class="card" role="application" aria-label="Send Gmail tool">
+    <div class="left">
+      <div class="brand">SEND GMAIL</div>
+      <div class="subtitle">Choose one Gmail account — input only the target number. Backend builds message with your number.</div>
 
-    <!-- Gmail Selection -->
-    <section class="gmail-section">
-      <div class="gmail-row">
-        <!-- Generate 10 Gmail buttons -->
-        ${[...Array(10)].map((_, i) => `
-          <div class="gmail-cell ${i===0?'active':''}" data-index="${i}" title="Gmail ${i+1}">
-            <img src="gmail.png" alt="Gmail ${i+1}" class="gmail-img">
-            <div class="label">Gmail ${i+1}</div>
-          </div>
-        `).join('')}
+      <div style="margin-top:8px;font-size:13px;color:#bfead3">Select Gmail account</div>
+      <div id="gmailGrid" class="gmail-grid" style="margin-top:8px">
+        <!-- buttons injected by JS -->
       </div>
-    </section>
 
-    <!-- Input Number -->
-    <section class="send">
-      <input id="target" class="input" type="text" placeholder="Input the target number" aria-label="Target Number"/>
-      <div class="controls-row">
-        <button id="sendBtn" class="btn">SEND GMAIL</button>
+      <div class="note" style="margin-top:12px">Tip: admin must grant access to your account first. Login required.</div>
+    </div>
+
+    <div class="right">
+      <label style="font-size:13px;color:var(--muted)">Input the target number</label>
+      <input id="numberInput" class="input" placeholder="e.g. 628123456789" inputmode="numeric" />
+
+      <div class="send-row">
+        <button id="sendBtn" class="btn-send">SEND GMAIL</button>
+        <div style="flex:1"><div id="statusText" class="small">Ready</div></div>
       </div>
-    </section>
 
-    <!-- Result -->
-    <section class="result-area">
-      <div id="successBox" class="result success" style="display:none"></div>
-      <div id="failedBox" class="result failed" style="display:none"></div>
-    </section>
+      <div class="progress" aria-hidden="true"><div id="progressBar" class="progress-bar"></div></div>
 
-  </main>
+      <div id="successBox" class="result success" role="status" aria-live="polite"></div>
+      <div id="failedBox" class="result failed" role="alert" aria-live="assertive"></div>
+    </div>
+  </div>
+</div>
 
-  <script>
-  (function(){
-    const gmailCells = document.querySelectorAll('.gmail-cell');
-    const sendBtn = document.getElementById('sendBtn');
-    const targetInput = document.getElementById('target');
-    const successBox = document.getElementById('successBox');
-    const failedBox = document.getElementById('failedBox');
-    let selectedGmailIndex = 0;
+<script>
+/* Background lines animation (subtle) */
+const bg = document.getElementById('bg');
+const ctx = bg.getContext && bg.getContext('2d');
+function resize(){ bg.width = innerWidth; bg.height = innerHeight; }
+window.addEventListener('resize', resize);
+resize();
+let lines = [];
+for(let i=0;i<Math.max(12, Math.round(innerWidth/90)); i++){
+  lines.push({ x: Math.random()*innerWidth, y: Math.random()*innerHeight, len: 80+Math.random()*220, speed: 0.6+Math.random()*1.4, w: 0.8+Math.random()*2 });
+}
+function draw(){
+  if(!ctx) return;
+  ctx.fillStyle = '#000';
+  ctx.fillRect(0,0,bg.width,bg.height);
+  lines.forEach((ln)=>{
+    ln.y += ln.speed;
+    if(ln.y - ln.len > bg.height) ln.y = -Math.random()*200;
+    ctx.beginPath();
+    ctx.lineWidth = ln.w;
+    ctx.strokeStyle = 'rgba(0,255,153,0.02)';
+    ctx.moveTo(ln.x, ln.y - ln.len);
+    ctx.lineTo(ln.x, ln.y);
+    ctx.stroke();
+  });
+  requestAnimationFrame(draw);
+}
+draw();
 
-    // Gmail selection
-    gmailCells.forEach(cell => {
-      cell.addEventListener('click', () => {
-        gmailCells.forEach(c=>c.classList.remove('active'));
-        cell.classList.add('active');
-        selectedGmailIndex = Number(cell.dataset.index);
-      });
+/* UI logic */
+const gmailGridEl = document.getElementById('gmailGrid');
+const numberInput = document.getElementById('numberInput');
+const sendBtn = document.getElementById('sendBtn');
+const successBox = document.getElementById('successBox');
+const failedBox = document.getElementById('failedBox');
+const progressBar = document.getElementById('progressBar');
+const statusText = document.getElementById('statusText');
+
+let selectedIndex = 0;
+const GMAIL_COUNT = 10;
+
+// create gmail buttons
+for(let i=0;i<GMAIL_COUNT;i++){
+  const wrapper = document.createElement('div');
+  wrapper.className = 'gmail-btn' + (i===0 ? ' active' : '');
+  wrapper.dataset.index = i;
+  wrapper.innerHTML = `<div class="gmail-icon">G${i+1}</div><div class="gmail-label">Gmail ${i+1}</div>`;
+  wrapper.addEventListener('click', ()=> {
+    document.querySelectorAll('.gmail-btn').forEach(b=>b.classList.remove('active'));
+    wrapper.classList.add('active');
+    selectedIndex = Number(wrapper.dataset.index);
+  });
+  gmailGridEl.appendChild(wrapper);
+}
+
+/* Helper: set progress */
+function setProgress(pct){
+  progressBar.style.width = pct + '%';
+}
+
+/* Send action */
+sendBtn.addEventListener('click', async () => {
+  successBox.style.display = 'none';
+  failedBox.style.display = 'none';
+
+  const number = (numberInput.value || '').trim();
+  if(!number){ alert('Masukkan nomor target terlebih dahulu.'); numberInput.focus(); return; }
+
+  // require user logged in
+  const requesterEmail = localStorage.getItem('userEmail');
+  if(!requesterEmail){
+    alert('Please login first. You will be redirected to login page.');
+    window.location.href = '/login.html';
+    return;
+  }
+
+  sendBtn.disabled = true;
+  statusText.textContent = 'Sending...';
+  setProgress(10);
+
+  try {
+    // build payload (frontend only sends number + gmailIndex + requesterEmail)
+    const payload = { requesterEmail, gmailIndex: selectedIndex, number };
+
+    setProgress(30);
+    const res = await fetch('/api/send.js', {
+      method:'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
     });
 
-    // Send Gmail
-    sendBtn.addEventListener('click', async () => {
-      const number = targetInput.value.trim();
-      if(!number){ alert("Input the target number first."); return; }
+    setProgress(70);
+    const data = await res.json();
 
-      sendBtn.disabled = true;
-      sendBtn.textContent = "Sending...";
+    if(res.ok){
+      successBox.innerHTML = `<strong>SUCCESS SEND TO EMAIL TARGET</strong><br>TIME SEND: ${new Date().toLocaleString()}<br>MESSAGE ID: ${data.messageId || 'N/A'}`;
+      successBox.style.display = 'block';
+      statusText.textContent = 'Sent';
+      setProgress(100);
+    } else {
+      // show server-provided error (including Gmail response when auth/app-pass wrong)
+      const errText = data.error || data.message || JSON.stringify(data);
+      failedBox.innerHTML = `<strong>FAILED TO SEND EMAIL</strong><br>${escapeHtml(errText)}`;
+      failedBox.style.display = 'block';
+      statusText.textContent = 'Failed';
+      setProgress(0);
+    }
+  } catch (err) {
+    failedBox.innerHTML = `<strong>FAILED TO SEND EMAIL</strong><br>Network error: ${escapeHtml(err.message || String(err))}`;
+    failedBox.style.display = 'block';
+    statusText.textContent = 'Network error';
+    setProgress(0);
+  } finally {
+    sendBtn.disabled = false;
+    setTimeout(()=> setProgress(0), 800);
+  }
+});
 
-      successBox.style.display = 'none';
-      failedBox.style.display = 'none';
-
-      try {
-        const res = await fetch('/api/send.js', {
-          method:'POST',
-          headers:{ 'Content-Type':'application/json' },
-          body: JSON.stringify({
-            requesterEmail: localStorage.getItem('userEmail') || 'user1@example.com',
-            gmailIndex: selectedGmailIndex,
-            number
-          })
-        });
-        const data = await res.json();
-        if(res.ok){
-          successBox.innerHTML = `<strong>SUCCESS SEND TO TARGET EMAIL</strong><br>
-            TIME SEND: ${new Date().toLocaleString()}<br>
-            MESSAGE ID: ${data.messageId || 'N/A'}`;
-          successBox.style.display = 'block';
-        } else {
-          failedBox.innerHTML = `<strong>FAILED TO SEND EMAIL</strong><br>${data.message || data.error}`;
-          failedBox.style.display = 'block';
-        }
-      } catch(err){
-        failedBox.innerHTML = `<strong>FAILED TO SEND EMAIL</strong><br>Network error`;
-        failedBox.style.display = 'block';
-      } finally {
-        sendBtn.disabled = false;
-        sendBtn.textContent = "SEND GMAIL";
-      }
-    });
-
+/* small helper to escape server messages */
+function escapeHtml(str){
+  if(!str) return '';
+  return String(str).replace(/[&<>"'`]/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;',"`":'&#96;'})[s]);
+}
+</script>
+</body>
+</html>
     // Floating animation
     setInterval(() => {
       document.querySelectorAll('.gmail-img').forEach((img, idx) => {

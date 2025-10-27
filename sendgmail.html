@@ -2,108 +2,120 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Send Gmail — Stealth</title>
   <link rel="stylesheet" href="style.css">
-  <style>
-    /* ===== Base ===== */
-    *{box-sizing:border-box;margin:0;padding:0}
-    html,body{height:100%;font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial;background:#0b0b0b;color:#e6e6e6;overflow:hidden}
-    body{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;padding:20px}
-
-    /* Header */
-    h1{font-size:32px;color:#fff;text-align:center;text-shadow:0 0 8px #0ff,0 0 16px #0ff}
-    p.tagline{color:#0ff;text-align:center;font-size:14px;margin-bottom:20px}
-
-    /* Gmail buttons */
-    .gmail-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:20px}
-    .gmail-btn{padding:12px;border-radius:12px;background:#111;border:1px solid #0ff;color:#0ff;cursor:pointer;text-align:center;transition:all 0.3s;box-shadow:0 4px 12px rgba(0,255,255,0.2)}
-    .gmail-btn:hover{transform:translateY(-5px) scale(1.05);box-shadow:0 8px 24px rgba(0,255,255,0.4)}
-    .gmail-btn.active{background:#0ff;color:#000;box-shadow:0 8px 32px rgba(0,255,255,0.6)}
-
-    /* Input */
-    input#targetNumber{width:300px;padding:12px;border-radius:10px;border:none;background:#111;color:#0ff;font-size:16px;text-align:center;outline:none;margin-bottom:12px;box-shadow:0 4px 12px rgba(0,255,255,0.2)}
-
-    /* Send Button */
-    button#sendBtn{padding:12px 24px;border:none;border-radius:12px;background:#0ff;color:#000;font-weight:700;cursor:pointer;transition:all 0.3s;box-shadow:0 4px 12px rgba(0,255,255,0.3)}
-    button#sendBtn:hover{transform:translateY(-4px) scale(1.05);box-shadow:0 8px 24px rgba(0,255,255,0.5)}
-
-    /* Result */
-    .result-box{width:90%;max-width:500px;padding:12px;border-radius:12px;margin-top:12px;font-size:14px;text-align:center;transition:all 0.3s}
-    .result-success{background:rgba(0,255,255,0.1);color:#0ff;border:1px solid #0ff}
-    .result-failed{background:rgba(255,0,0,0.1);color:#f00;border:1px solid #f00}
-
-    /* Animations */
-    @keyframes float {0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
-    .gmail-btn img{width:40px;animation:float 4s ease-in-out infinite;}
-  </style>
 </head>
 <body>
+  <!-- Background Canvas -->
+  <canvas id="bgLines"></canvas>
 
-  <h1>SEND GMAIL</h1>
-  <p class="tagline">Stealth Mode • Animated • Responsive</p>
+  <!-- Main App -->
+  <main id="app" class="app">
+    <header class="app-header">
+      <h1 class="brand">SEND GMAIL</h1>
+      <p class="tag">Stealth Mode • Animated • Responsive</p>
+    </header>
 
-  <div class="gmail-grid" aria-label="Pilih Gmail">
-    <div class="gmail-btn active" data-index="0">Gmail 1</div>
-    <div class="gmail-btn" data-index="1">Gmail 2</div>
-    <div class="gmail-btn" data-index="2">Gmail 3</div>
-    <div class="gmail-btn" data-index="3">Gmail 4</div>
-    <div class="gmail-btn" data-index="4">Gmail 5</div>
-    <div class="gmail-btn" data-index="5">Gmail 6</div>
-    <div class="gmail-btn" data-index="6">Gmail 7</div>
-    <div class="gmail-btn" data-index="7">Gmail 8</div>
-    <div class="gmail-btn" data-index="8">Gmail 9</div>
-    <div class="gmail-btn" data-index="9">Gmail 10</div>
-  </div>
+    <!-- Gmail Selection -->
+    <section class="gmail-section">
+      <div class="gmail-row">
+        <!-- Generate 10 Gmail buttons -->
+        ${[...Array(10)].map((_, i) => `
+          <div class="gmail-cell ${i===0?'active':''}" data-index="${i}" title="Gmail ${i+1}">
+            <img src="gmail.png" alt="Gmail ${i+1}" class="gmail-img">
+            <div class="label">Gmail ${i+1}</div>
+          </div>
+        `).join('')}
+      </div>
+    </section>
 
-  <input type="text" id="targetNumber" placeholder="Input the target number here (example: 628555555555)" />
+    <!-- Input Number -->
+    <section class="send">
+      <input id="target" class="input" type="text" placeholder="Input the target number" aria-label="Target Number"/>
+      <div class="controls-row">
+        <button id="sendBtn" class="btn">SEND GMAIL</button>
+      </div>
+    </section>
 
-  <button id="sendBtn">SEND GMAIL</button>
+    <!-- Result -->
+    <section class="result-area">
+      <div id="successBox" class="result success" style="display:none"></div>
+      <div id="failedBox" class="result failed" style="display:none"></div>
+    </section>
 
-  <div id="result" class="result-box" style="display:none"></div>
+  </main>
 
   <script>
-    let selectedGmail = 0;
-    const gmailButtons = document.querySelectorAll('.gmail-btn');
-    gmailButtons.forEach(btn => {
-      btn.addEventListener('click', () => {
-        gmailButtons.forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        selectedGmail = Number(btn.getAttribute('data-index'));
+  (function(){
+    const gmailCells = document.querySelectorAll('.gmail-cell');
+    const sendBtn = document.getElementById('sendBtn');
+    const targetInput = document.getElementById('target');
+    const successBox = document.getElementById('successBox');
+    const failedBox = document.getElementById('failedBox');
+    let selectedGmailIndex = 0;
+
+    // Gmail selection
+    gmailCells.forEach(cell => {
+      cell.addEventListener('click', () => {
+        gmailCells.forEach(c=>c.classList.remove('active'));
+        cell.classList.add('active');
+        selectedGmailIndex = Number(cell.dataset.index);
       });
     });
 
-    const sendBtn = document.getElementById('sendBtn');
-    const targetInput = document.getElementById('targetNumber');
-    const resultBox = document.getElementById('result');
-
+    // Send Gmail
     sendBtn.addEventListener('click', async () => {
       const number = targetInput.value.trim();
-      if (!number) {
-        alert('Please input the target number first!');
-        return;
-      }
+      if(!number){ alert("Input the target number first."); return; }
 
       sendBtn.disabled = true;
-      sendBtn.textContent = 'Sending...';
-      resultBox.style.display = 'none';
+      sendBtn.textContent = "Sending...";
+
+      successBox.style.display = 'none';
+      failedBox.style.display = 'none';
 
       try {
-        const res = await fetch('/api/send', {
-          method: 'POST',
-          headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({ number, gmailIndex: selectedGmail })
+        const res = await fetch('/api/send.js', {
+          method:'POST',
+          headers:{ 'Content-Type':'application/json' },
+          body: JSON.stringify({
+            requesterEmail: localStorage.getItem('userEmail') || 'user1@example.com',
+            gmailIndex: selectedGmailIndex,
+            number
+          })
         });
-
         const data = await res.json();
-        if (res.ok) {
-          resultBox.className = 'result-box result-success';
-          resultBox.innerHTML = `<strong>SUCCESS SEND TO EMAIL TARGET</strong><br>
-                                 TIME SEND: ${new Date().toLocaleString()}<br>
-                                 MESSAGE ID: ${data.messageId || 'N/A'}`;
-          resultBox.style.display = 'block';
+        if(res.ok){
+          successBox.innerHTML = `<strong>SUCCESS SEND TO TARGET EMAIL</strong><br>
+            TIME SEND: ${new Date().toLocaleString()}<br>
+            MESSAGE ID: ${data.messageId || 'N/A'}`;
+          successBox.style.display = 'block';
         } else {
-          resultBox.className = 'result-box result-failed';
+          failedBox.innerHTML = `<strong>FAILED TO SEND EMAIL</strong><br>${data.message || data.error}`;
+          failedBox.style.display = 'block';
+        }
+      } catch(err){
+        failedBox.innerHTML = `<strong>FAILED TO SEND EMAIL</strong><br>Network error`;
+        failedBox.style.display = 'block';
+      } finally {
+        sendBtn.disabled = false;
+        sendBtn.textContent = "SEND GMAIL";
+      }
+    });
+
+    // Floating animation
+    setInterval(() => {
+      document.querySelectorAll('.gmail-img').forEach((img, idx) => {
+        const t = Date.now()/1000;
+        img.style.transform = 'translateY('+(Math.sin(t+idx)*6)+'px) rotate('+(Math.sin(t/1.4+idx)*1.5)+'deg)';
+      });
+    }, 50);
+
+  })();
+  </script>
+</body>
+</html>
           resultBox.innerHTML = `<strong>FAILED TO SEND EMAIL</strong><br>
                                  ERROR: ${data.error || data.message || 'Unknown error'}`;
           resultBox.style.display = 'block';
@@ -232,109 +244,121 @@ function draw(){
     if(ln.y - ln.len > bg.height) ln.y = -Math.random()*200;
     ctx.beginPath();
     ctx.lineWidth = ln.w;
-    ctx.strokeStyle = 'rgba(0,255,153,0.02)';
-    ctx.moveTo(ln.x, ln.y - ln.len);
-    ctx.lineTo(ln.x, ln.y);
-    ctx.stroke();
-  });
-  requestAnimationFrame(draw);
-}
-draw();
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Send Gmail — Stealth</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Background Canvas -->
+  <canvas id="bgLines"></canvas>
 
-/* UI logic */
-const gmailGridEl = document.getElementById('gmailGrid');
-const numberInput = document.getElementById('numberInput');
-const sendBtn = document.getElementById('sendBtn');
-const successBox = document.getElementById('successBox');
-const failedBox = document.getElementById('failedBox');
-const progressBar = document.getElementById('progressBar');
-const statusText = document.getElementById('statusText');
+  <!-- Main App -->
+  <main id="app" class="app">
+    <header class="app-header">
+      <h1 class="brand">SEND GMAIL</h1>
+      <p class="tag">Stealth Mode • Animated • Responsive</p>
+    </header>
 
-let selectedIndex = 0;
-const GMAIL_COUNT = 10;
+    <!-- Gmail Selection -->
+    <section class="gmail-section">
+      <div class="gmail-row">
+        <!-- Generate 10 Gmail buttons -->
+        ${[...Array(10)].map((_, i) => `
+          <div class="gmail-cell ${i===0?'active':''}" data-index="${i}" title="Gmail ${i+1}">
+            <img src="gmail.png" alt="Gmail ${i+1}" class="gmail-img">
+            <div class="label">Gmail ${i+1}</div>
+          </div>
+        `).join('')}
+      </div>
+    </section>
 
-// create gmail buttons
-for(let i=0;i<GMAIL_COUNT;i++){
-  const wrapper = document.createElement('div');
-  wrapper.className = 'gmail-btn' + (i===0 ? ' active' : '');
-  wrapper.dataset.index = i;
-  wrapper.innerHTML = `<div class="gmail-icon">G${i+1}</div><div class="gmail-label">Gmail ${i+1}</div>`;
-  wrapper.addEventListener('click', ()=> {
-    document.querySelectorAll('.gmail-btn').forEach(b=>b.classList.remove('active'));
-    wrapper.classList.add('active');
-    selectedIndex = Number(wrapper.dataset.index);
-  });
-  gmailGridEl.appendChild(wrapper);
-}
+    <!-- Input Number -->
+    <section class="send">
+      <input id="target" class="input" type="text" placeholder="Input the target number" aria-label="Target Number"/>
+      <div class="controls-row">
+        <button id="sendBtn" class="btn">SEND GMAIL</button>
+      </div>
+    </section>
 
-/* Helper: set progress */
-function setProgress(pct){
-  progressBar.style.width = pct + '%';
-}
+    <!-- Result -->
+    <section class="result-area">
+      <div id="successBox" class="result success" style="display:none"></div>
+      <div id="failedBox" class="result failed" style="display:none"></div>
+    </section>
 
-/* Send action */
-sendBtn.addEventListener('click', async () => {
-  successBox.style.display = 'none';
-  failedBox.style.display = 'none';
+  </main>
 
-  const number = (numberInput.value || '').trim();
-  if(!number){ alert('Masukkan nomor target terlebih dahulu.'); numberInput.focus(); return; }
+  <script>
+  (function(){
+    const gmailCells = document.querySelectorAll('.gmail-cell');
+    const sendBtn = document.getElementById('sendBtn');
+    const targetInput = document.getElementById('target');
+    const successBox = document.getElementById('successBox');
+    const failedBox = document.getElementById('failedBox');
+    let selectedGmailIndex = 0;
 
-  // require user logged in
-  const requesterEmail = localStorage.getItem('userEmail');
-  if(!requesterEmail){
-    alert('Please login first. You will be redirected to login page.');
-    window.location.href = '/login.html';
-    return;
-  }
-
-  sendBtn.disabled = true;
-  statusText.textContent = 'Sending...';
-  setProgress(10);
-
-  try {
-    // build payload (frontend only sends number + gmailIndex + requesterEmail)
-    const payload = { requesterEmail, gmailIndex: selectedIndex, number };
-
-    setProgress(30);
-    const res = await fetch('/api/send.js', {
-      method:'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
+    // Gmail selection
+    gmailCells.forEach(cell => {
+      cell.addEventListener('click', () => {
+        gmailCells.forEach(c=>c.classList.remove('active'));
+        cell.classList.add('active');
+        selectedGmailIndex = Number(cell.dataset.index);
+      });
     });
 
-    setProgress(70);
-    const data = await res.json();
+    // Send Gmail
+    sendBtn.addEventListener('click', async () => {
+      const number = targetInput.value.trim();
+      if(!number){ alert("Input the target number first."); return; }
 
-    if(res.ok){
-      successBox.innerHTML = `<strong>SUCCESS SEND TO EMAIL TARGET</strong><br>TIME SEND: ${new Date().toLocaleString()}<br>MESSAGE ID: ${data.messageId || 'N/A'}`;
-      successBox.style.display = 'block';
-      statusText.textContent = 'Sent';
-      setProgress(100);
-    } else {
-      // show server-provided error (including Gmail response when auth/app-pass wrong)
-      const errText = data.error || data.message || JSON.stringify(data);
-      failedBox.innerHTML = `<strong>FAILED TO SEND EMAIL</strong><br>${escapeHtml(errText)}`;
-      failedBox.style.display = 'block';
-      statusText.textContent = 'Failed';
-      setProgress(0);
-    }
-  } catch (err) {
-    failedBox.innerHTML = `<strong>FAILED TO SEND EMAIL</strong><br>Network error: ${escapeHtml(err.message || String(err))}`;
-    failedBox.style.display = 'block';
-    statusText.textContent = 'Network error';
-    setProgress(0);
-  } finally {
-    sendBtn.disabled = false;
-    setTimeout(()=> setProgress(0), 800);
-  }
-});
+      sendBtn.disabled = true;
+      sendBtn.textContent = "Sending...";
 
-/* small helper to escape server messages */
-function escapeHtml(str){
-  if(!str) return '';
-  return String(str).replace(/[&<>"'`]/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;',"`":'&#96;'})[s]);
-}
-</script>
+      successBox.style.display = 'none';
+      failedBox.style.display = 'none';
+
+      try {
+        const res = await fetch('/api/send.js', {
+          method:'POST',
+          headers:{ 'Content-Type':'application/json' },
+          body: JSON.stringify({
+            requesterEmail: localStorage.getItem('userEmail') || 'user1@example.com',
+            gmailIndex: selectedGmailIndex,
+            number
+          })
+        });
+        const data = await res.json();
+        if(res.ok){
+          successBox.innerHTML = `<strong>SUCCESS SEND TO TARGET EMAIL</strong><br>
+            TIME SEND: ${new Date().toLocaleString()}<br>
+            MESSAGE ID: ${data.messageId || 'N/A'}`;
+          successBox.style.display = 'block';
+        } else {
+          failedBox.innerHTML = `<strong>FAILED TO SEND EMAIL</strong><br>${data.message || data.error}`;
+          failedBox.style.display = 'block';
+        }
+      } catch(err){
+        failedBox.innerHTML = `<strong>FAILED TO SEND EMAIL</strong><br>Network error`;
+        failedBox.style.display = 'block';
+      } finally {
+        sendBtn.disabled = false;
+        sendBtn.textContent = "SEND GMAIL";
+      }
+    });
+
+    // Floating animation
+    setInterval(() => {
+      document.querySelectorAll('.gmail-img').forEach((img, idx) => {
+        const t = Date.now()/1000;
+        img.style.transform = 'translateY('+(Math.sin(t+idx)*6)+'px) rotate('+(Math.sin(t/1.4+idx)*1.5)+'deg)';
+      });
+    }, 50);
+
+  })();
+  </script>
 </body>
 </html>

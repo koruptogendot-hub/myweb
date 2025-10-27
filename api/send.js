@@ -18,7 +18,7 @@ export default async function handler(req, res) {
 
     // DAFTAR 10 GMAIL + APP PASSWORD
     const gmailAccounts = [
-      { user: "gmail1@example.com", pass: "app_password1" },
+      { user: "koruptogendot@gmail.com", pass: "bhsb rmgs lczg iwsf" },
       { user: "gmail2@example.com", pass: "app_password2" },
       { user: "gmail3@example.com", pass: "app_password3" },
       { user: "gmail4@example.com", pass: "app_password4" },

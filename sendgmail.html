@@ -101,109 +101,293 @@
     }
 
     .result.show {
-      opacity: 1;
-    }
-
-    .success {
-      color: #00ff99;
-    }
-
-    .failed {
-      color: #ff4d4d;
-    }
-
-    .send-btn {
-      margin-top: 20px;
-      padding: 10px 20px;
-      border-radius: 10px;
-      border: none;
-      background: linear-gradient(45deg, #ff512f, #dd2476);
-      color: white;
-      font-size: 16px;
-      cursor: pointer;
-      box-shadow: 0 0 15px rgba(255, 81, 47, 0.4);
-      transition: 0.3s;
-    }
-
-    .send-btn:hover {
-      transform: scale(1.05);
-      box-shadow: 0 0 25px rgba(255, 81, 47, 0.7);
-    }
-  </style>
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Send Gmail — Stealth</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
+  <!-- BACKGROUND CANVAS -->
+  <canvas id="bgLines"></canvas>
 
-  <div class="container">
-    <h1>🚀 Send Gmail</h1>
-    <p>Input the target number first</p>
-    <input type="text" id="numberInput" placeholder="Example: 6281234567890" />
-
-    <div class="gmail-buttons" id="gmailButtons"></div>
-
-    <button class="send-btn" id="sendBtn">Send Email</button>
-
-    <div class="result" id="result"></div>
+  <!-- SPLASH LOADING (fullscreen) -->
+  <div id="splash" class="splash">
+    <div class="splash-inner">
+      <div class="splash-title">SEND GMAIL</div>
+      <div class="splash-sub">Preparing interface...</div>
+      <div class="splash-progress">
+        <div id="splashBar" class="splash-bar"></div>
+      </div>
+    </div>
   </div>
 
+  <!-- MAIN APP -->
+  <main id="app" class="app hidden" aria-hidden="true">
+    <header class="app-header">
+      <h1 class="brand">SEND GMAIL</h1>
+      <p class="tag">Stealth mode • Full animated • Responsive</p>
+    </header>
+
+    <!-- Gmail icons grid (2x5) -->
+    <section class="gmail-section" aria-label="Pilih Gmail">
+      <div class="gmail-row">
+        <div class="gmail-cell active" data-index="0" title="Gmail 1">
+          <img src="gmail.png" alt="Gmail 1" class="gmail-img"><div class="label">Gmail 1</div>
+        </div>
+        <div class="gmail-cell" data-index="1" title="Gmail 2">
+          <img src="gmail.png" alt="Gmail 2" class="gmail-img"><div class="label">Gmail 2</div>
+        </div>
+        <div class="gmail-cell" data-index="2" title="Gmail 3">
+          <img src="gmail.png" alt="Gmail 3" class="gmail-img"><div class="label">Gmail 3</div>
+        </div>
+        <div class="gmail-cell" data-index="3" title="Gmail 4">
+          <img src="gmail.png" alt="Gmail 4" class="gmail-img"><div class="label">Gmail 4</div>
+        </div>
+        <div class="gmail-cell" data-index="4" title="Gmail 5">
+          <img src="gmail.png" alt="Gmail 5" class="gmail-img"><div class="label">Gmail 5</div>
+        </div>
+      </div>
+
+      <div class="gmail-row">
+        <div class="gmail-cell" data-index="5" title="Gmail 6">
+          <img src="gmail.png" alt="Gmail 6" class="gmail-img"><div class="label">Gmail 6</div>
+        </div>
+        <div class="gmail-cell" data-index="6" title="Gmail 7">
+          <img src="gmail.png" alt="Gmail 7" class="gmail-img"><div class="label">Gmail 7</div>
+        </div>
+        <div class="gmail-cell" data-index="7" title="Gmail 8">
+          <img src="gmail.png" alt="Gmail 8" class="gmail-img"><div class="label">Gmail 8</div>
+        </div>
+        <div class="gmail-cell" data-index="8" title="Gmail 9">
+          <img src="gmail.png" alt="Gmail 9" class="gmail-img"><div class="label">Gmail 9</div>
+        </div>
+        <div class="gmail-cell" data-index="9" title="Gmail 10">
+          <img src="gmail.png" alt="Gmail 10" class="gmail-img"><div class="label">Gmail 10</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Statistik -->
+    <section class="stats" aria-label="Statistik pengiriman">
+      <div class="stat-row">
+        <div class="stat-card">
+          <div class="stat-anim" aria-hidden="true"></div>
+          <div class="stat-title">SUCCESS SEND</div>
+          <div class="stat-value" id="successCount">0</div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-anim" aria-hidden="true"></div>
+          <div class="stat-title">FAILED SEND</div>
+          <div class="stat-value" id="failedCount">0</div>
+        </div>
+      </div>
+
+      <div class="progress-wrap">
+        <div class="progress-labels"><span>Progress</span><span id="progressPct">0%</span></div>
+        <div class="progress-track"><div id="progressBar" class="progress-bar"></div></div>
+      </div>
+    </section>
+
+    <!-- Send area -->
+    <section class="send" aria-label="Kirim email">
+      <input id="target" class="input" type="text" placeholder="Masukkan nomor atau email target" aria-label="Target" />
+      <div class="controls-row">
+        <button id="sendBtn" class="btn">SEND GMAIL</button>
+      </div>
+
+      <div class="result-area" aria-live="polite">
+        <div id="successBox" class="result success" style="display:none"></div>
+        <div id="failedBox" class="result failed" style="display:none"></div>
+      </div>
+    </section>
+  </main>
+
+  <!-- INLINE JS: in-app behavior (no external .js file required) -->
   <script>
-    let selectedGmail = null;
+    (function () {
+      // Elements
+      const splash = document.getElementById('splash');
+      const splashBar = document.getElementById('splashBar');
+      const app = document.getElementById('app');
+      const bgCanvas = document.getElementById('bgLines');
+      const gmailCells = document.querySelectorAll('.gmail-cell');
+      const sendBtn = document.getElementById('sendBtn');
+      const targetInput = document.getElementById('target');
+      const successCountEl = document.getElementById('successCount');
+      const failedCountEl = document.getElementById('failedCount');
+      const progressBar = document.getElementById('progressBar');
+      const progressPct = document.getElementById('progressPct');
+      const successBox = document.getElementById('successBox');
+      const failedBox = document.getElementById('failedBox');
 
-    // generate Gmail 1–10 button
-    const buttonsContainer = document.getElementById("gmailButtons");
-    for (let i = 1; i <= 10; i++) {
-      const btn = document.createElement("button");
-      btn.textContent = `Gmail ${i}`;
-      btn.classList.add("gmail-btn");
-      btn.onclick = () => {
-        selectedGmail = i;
-        document.querySelectorAll(".gmail-btn").forEach(b => b.style.opacity = "0.5");
-        btn.style.opacity = "1";
-      };
-      buttonsContainer.appendChild(btn);
-    }
+      // State
+      let success = 0, failed = 0;
+      let selectedGmailIndex = 0; // default Gmail 1
 
-    document.getElementById("sendBtn").addEventListener("click", async () => {
-      const number = document.getElementById("numberInput").value.trim();
-      const result = document.getElementById("result");
-      result.classList.remove("show");
-
-      if (!selectedGmail) {
-        result.textContent = "⚠️ Please select a Gmail account (1–10)";
-        result.className = "result failed show";
-        return;
+      // 1) Splash loading (auto run) ------------------------------------------------
+      function runSplash() {
+        splash.classList.remove('hidden');
+        let pct = 0;
+        const step = 2; // speed
+        const t = setInterval(() => {
+          pct += step;
+          splashBar.style.width = pct + '%';
+          if (pct >= 100) {
+            clearInterval(t);
+            // small delay then show app
+            splash.classList.add('fadeOut');
+            setTimeout(() => {
+              splash.style.display = 'none';
+              showApp();
+            }, 300);
+          }
+        }, 26); // ~2.6s total
       }
 
-      if (!number) {
-        result.textContent = "⚠️ Please input target number first";
-        result.className = "result failed show";
-        return;
+      function showApp() {
+        app.classList.remove('hidden');
+        app.setAttribute('aria-hidden', 'false');
       }
 
-      result.textContent = "⏳ Sending...";
-      result.className = "result show";
-
-      try {
-        const res = await fetch(`/api/send.js`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ number, gmailNumber: selectedGmail })
+      // 2) Gmail selection ---------------------------------------------------------
+      gmailCells.forEach(cell => {
+        cell.addEventListener('click', () => {
+          gmailCells.forEach(c => c.classList.remove('active'));
+          cell.classList.add('active');
+          selectedGmailIndex = Number(cell.getAttribute('data-index'));
         });
+      });
 
-        const data = await res.json();
+      // 3) Send action (sends gmailIndex so backend knows which account)
+      sendBtn.addEventListener('click', async () => {
+        const target = targetInput.value.trim();
+        if (!target) { alert('Masukkan nomor atau email target terlebih dahulu.'); return; }
 
-        if (res.ok) {
-          result.textContent = `✅ SUCCESS SEND TO EMAIL TARGET\nTime: ${data.time}\nMessage ID: ${data.messageId}`;
-          result.className = "result success show";
-        } else {
-          result.textContent = `❌ FAILED TO SEND EMAIL\nError: ${data.error}`;
-          result.className = "result failed show";
+        // UI pre-send
+        sendBtn.disabled = true;
+        sendBtn.textContent = 'Sending...';
+        successBox.style.display = 'none';
+        failedBox.style.display = 'none';
+        progressBar.style.width = '20%';
+        progressPct.textContent = '20%';
+
+        try {
+          const res = await fetch('/api/send', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ number: target, gmailIndex: selectedGmailIndex })
+          });
+
+          // try parsing JSON (safe)
+          let data = {};
+          try { data = await res.json(); } catch (e) { data = {}; }
+
+          if (res.ok) {
+            success++;
+            successCountEl.textContent = success;
+            successBox.innerHTML = '<strong>SUCCESS SEND TO TARGET EMAIL</strong><br>TIME SEND: ' +
+              new Date().toLocaleString() + '<br>MESSAGE ID: ' + (data.messageId || '9999');
+            successBox.style.display = 'block';
+          } else {
+            // show backend-provided error (e.g. missing app password)
+            failed++;
+            failedCountEl.textContent = failed;
+            const msg = data.error || (data.message) || 'Unknown error';
+            failedBox.innerHTML = '<strong>FAILED SEND</strong><br>' + msg;
+            failedBox.style.display = 'block';
+          }
+        } catch (err) {
+          failed++;
+          failedCountEl.textContent = failed;
+          failedBox.innerHTML = '<strong>FAILED SEND</strong><br>Network error';
+          failedBox.style.display = 'block';
+        } finally {
+          // update progress visual
+          const total = success + failed;
+          const pct = total ? Math.round((success / total) * 100) : 0;
+          progressBar.style.width = pct + '%';
+          progressPct.textContent = pct + '%';
+
+          sendBtn.disabled = false;
+          sendBtn.textContent = 'SEND GMAIL';
         }
-      } catch (err) {
-        result.textContent = `❌ FAILED TO SEND EMAIL\nError: ${err.message}`;
-        result.className = "result failed show";
-      }
-    });
-  </script>
+      });
 
+      // 4) Background cyber lines canvas animation ---------------------------------
+      (function linesCanvas() {
+        const ctx = bgCanvas.getContext && bgCanvas.getContext('2d');
+        if (!ctx) return;
+        function resize() {
+          bgCanvas.width = innerWidth;
+          bgCanvas.height = innerHeight;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        // create vertical line objects based on width
+        let lines = [];
+        function initLines() {
+          lines = [];
+          const count = Math.max(10, Math.round(innerWidth / 90));
+          for (let i = 0; i < count; i++) {
+            lines.push({
+              x: (i + 0.5) * (bgCanvas.width / count),
+              y: Math.random() * bgCanvas.height,
+              len: 0.5 * bgCanvas.height + Math.random() * 0.8 * bgCanvas.height,
+              speed: 0.2 + Math.random() * 0.6,
+              w: 1 + Math.random() * 2,
+              alpha: 0.02 + Math.random() * 0.06
+            });
+          }
+        }
+        initLines();
+        window.addEventListener('resize', initLines);
+
+        function draw() {
+          ctx.clearRect(0, 0, bgCanvas.width, bgCanvas.height);
+          // dark base
+          ctx.fillStyle = '#000';
+          ctx.fillRect(0,0,bgCanvas.width,bgCanvas.height);
+
+          lines.forEach(ln => {
+            ln.y += ln.speed;
+            if (ln.y - ln.len > bgCanvas.height) ln.y = -100 - Math.random() * 200;
+            // darker band
+            ctx.beginPath();
+            ctx.lineWidth = ln.w;
+            ctx.strokeStyle = 'rgba(24,24,24,' + ln.alpha + ')';
+            ctx.moveTo(ln.x, ln.y - ln.len);
+            ctx.lineTo(ln.x, ln.y);
+            ctx.stroke();
+            // inner subtle highlight
+            ctx.beginPath();
+            ctx.lineWidth = Math.max(0.4, ln.w * 0.5);
+            ctx.strokeStyle = 'rgba(40,40,40,' + (ln.alpha * 0.6) + ')';
+            ctx.moveTo(ln.x + 6, ln.y - ln.len * 0.6);
+            ctx.lineTo(ln.x + 6, ln.y + ln.len * 0.2);
+            ctx.stroke();
+          });
+
+          requestAnimationFrame(draw);
+        }
+        draw();
+      })();
+
+      // 5) floating animation for gmail PNGs (micro transform)
+      setInterval(() => {
+        document.querySelectorAll('.gmail-img').forEach((img, idx) => {
+          const t = Date.now() / 1000;
+          img.style.transform = 'translateY(' + (Math.sin(t + idx) * 6) + 'px) rotate(' + (Math.sin(t / 1.4 + idx) * 1.5) + 'deg)';
+        });
+      }, 50);
+
+      // Start splash automatically
+      runSplash();
+    })();
+  </script>
 </body>
 </html>

@@ -2,7 +2,7 @@ import nodemailer from 'nodemailer';
 import { readUsers } from './db.js';
 
 const GMAILS = [
-  { email: 'gmail1@example.com', appPassword: 'APP_PASS_1' },
+  { email: 'koruptogendot@gmail.com', appPassword: 'bhsb rmgs lczg iwsf' },
   { email: 'gmail2@example.com', appPassword: 'APP_PASS_2' },
   { email: 'gmail3@example.com', appPassword: 'APP_PASS_3' },
   { email: 'gmail4@example.com', appPassword: 'APP_PASS_4' },

@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Send Gmail</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="center-container" style="padding-top:30px;padding-bottom:60px">
+    <div class="container" style="max-width:720px">
+      <h1>Send Gmail</h1>
+      <p class="lead">Masukkan nomor target (contoh 6281234567) lalu pilih Gmail account, klik Send.</p>
+
+      <div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-bottom:12px">
+        <input id="number" type="text" placeholder="Input target number (e.g. 628123456789)">
+        <input id="toEmail" type="email" placeholder="Destination email (optional)">
+      </div>
+
+      <div style="margin-top:12px;text-align:center">
+        <div class="gmail-grid" id="gmailGrid"></div>
+      </div>
+
+      <div style="margin-top:12px;text-align:center">
+        <input id="subject" type="text" placeholder="Subject (optional)" style="width:80%">
+        <input id="customText" type="text" placeholder="Custom text (optional)" style="width:80%;margin-top:8px">
+      </div>
+
+      <div style="margin-top:14px">
+        <button id="sendBtn" onclick="sendMail()">SEND</button>
+      </div>
+
+      <div id="result" style="margin-top:14px"></div>
+    </div>
+  </div>
+
+<script>
+const email = localStorage.getItem('userEmail');
+if(!email) location.href='/login.html';
+
+// check access first
+(async ()=>{
+  const chk = await fetch('/api/checkAccess.js',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email})});
+  const data = await chk.json();
+  if(!data.access && data.role!=='owner'){
+    alert('Access Denied — Admin must grant access first');
+    location.href='/dashboard.html';
+    return;
+  }
+})();
+
+const gmailGrid = document.getElementById('gmailGrid');
+let selected = 0;
+for(let i=1;i<=10;i++){
+  const btn = document.createElement('button');
+  btn.innerText = `Gmail ${i}`;
+  btn.dataset.idx = i-1;
+  btn.onclick = () => {
+    document.querySelectorAll('#gmailGrid button').forEach(b=>b.style.boxShadow='');
+    btn.style.boxShadow='0 8px 30px rgba(0,255,153,0.25)';
+    selected = Number(btn.dataset.idx);
+  };
+  if(i===1) { btn.style.boxShadow='0 8px 30px rgba(0,255,153,0.25)'; selected=0; }
+  gmailGrid.appendChild(btn);
+}
+
+async function sendMail(){
+  const number = document.getElementById('number').value.trim();
+  const toEmail = document.getElementById('toEmail').value.trim();
+  const subject = document.getElementById('subject').value.trim() || `Verification Number`;
+  const customText = document.getElementById('customText').value.trim();
+  if(!number) return alert('Please input number first');
+
+  // choose recipient: if toEmail present use it, else create a fallback using number@example.com
+  const to = toEmail || `${number}@example.com`;
+
+  document.getElementById('sendBtn').disabled = true;
+  document.getElementById('sendBtn').innerText = 'Sending...';
+
+  const text = customText || `HI THIS NUMBER ${number} Please Check The Number`;
+
+  const payload = { requesterEmail: email, gmailIndex: selected, to, subject, text, number };
+
+  try {
+    const res = await fetch('/api/send.js',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    const data = await res.json();
+    const out = document.getElementById('result');
+    if(res.ok){
+      out.innerHTML = `<div class="result success"><strong>SUCCESS SEND TO EMAIL TARGET</strong><br>TIME: ${new Date().toLocaleString()}<br>MESSAGE ID: ${data.messageId || 'n/a'}</div>`;
+      // increment success counter (optional fetch)
+    } else {
+      out.innerHTML = `<div class="result failed"><strong>FAILED TO SEND EMAIL</strong><br>${data.message || data.error}</div>`;
+    }
+  } catch(err){
+    document.getElementById('result').innerHTML = `<div class="result failed"><strong>FAILED TO SEND EMAIL</strong><br>${err.message}</div>`;
+  } finally {
+    document.getElementById('sendBtn').disabled=false;
+    document.getElementById('sendBtn').innerText='SEND';
+  }
+}
+</script>
+</body>
+</html>

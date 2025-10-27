@@ -1,0 +1,8 @@
+[
+  {
+    "email": "admin@admin.id",
+    "password": "999",
+    "role": "owner",
+    "access": true
+  }
+]

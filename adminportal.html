@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Admin Portal — Stealth</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="center-container">
+    <div class="container" style="max-width:820px">
+      <h1>Admin Portal</h1>
+      <p class="lead">Grant access to registered users so they can use features.</p>
+
+      <div style="text-align:center;margin-bottom:12px">
+        <input id="emailInput" type="email" placeholder="Enter user email to grant access">
+        <button onclick="grant()">ADD AKSES</button>
+      </div>
+
+      <div style="margin-top:18px">
+        <h3>Registered users</h3>
+        <div id="userList"></div>
+      </div>
+    </div>
+  </div>
+
+<script>
+const email = localStorage.getItem('userEmail');
+if(!email) location.href='/login.html';
+if(email !== 'admin@admin.id'){ alert('Admin only'); location.href='/dashboard.html'; }
+
+async function loadUsers(){
+  const res = await fetch('/api/getUsers.js');
+  const users = await res.json();
+  const list = document.getElementById('userList');
+  list.innerHTML = '';
+  users.forEach(u=>{
+    list.innerHTML += `<div style="display:flex;justify-content:space-between;padding:8px 6px;border-bottom:1px solid rgba(0,255,153,0.03)"><div>${u.email} <small style="color:#a9f5d4">(${u.role||'user'})</small></div><div>Access: ${u.access ? '✅' : '❌'} ${u.access ? '' : `<button onclick="grant('${u.email}')">Grant</button>`}</div></div>`;
+  });
+}
+async function grant(emailParam){
+  const target = emailParam || document.getElementById('emailInput').value.trim();
+  if(!target) return alert('Enter email');
+  const res = await fetch('/api/adminaccess.js',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:target})});
+  const data = await res.json();
+  if(res.ok){ alert(data.message); loadUsers(); } else { alert(data.message || 'Error'); }
+}
+
+loadUsers();
+</script>
+</body>
+</html>

@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Stealth Panel — Welcome</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500&display=swap" rel="stylesheet">
+<style>
+  /* ===== Reset & base ===== */
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html,body{height:100%;font-family:'Orbitron',sans-serif;overflow:hidden;}
+  body{
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    background:linear-gradient(-45deg,#0b0b0b,#1a1a1a,#000,#111);
+    background-size:400% 400%;
+    animation:gradientBG 15s ease infinite;
+    color:#00ff99;
+  }
+  @keyframes gradientBG{
+    0%{background-position:0% 50%}
+    50%{background-position:100% 50%}
+    100%{background-position:0% 50%}
+  }
+
+  .container{
+    text-align:center;
+    background:rgba(0,0,0,0.7);
+    padding:50px 40px;
+    border-radius:20px;
+    box-shadow:0 10px 40px rgba(0,255,153,0.3);
+    backdrop-filter: blur(8px);
+  }
+
+  h1{
+    font-size:48px;
+    color:#00ffcc;
+    margin-bottom:20px;
+    animation:textGlow 2s infinite alternate;
+  }
+
+  p{
+    font-size:18px;
+    color:#b0f2c2;
+    margin-bottom:40px;
+  }
+
+  @keyframes textGlow{
+    0%{text-shadow:0 0 4px #00ff99,0 0 10px #00ffcc;}
+    100%{text-shadow:0 0 10px #00ff99,0 0 20px #00ffcc,0 0 30px #00ff99;}
+  }
+
+  button{
+    padding:15px 30px;
+    font-size:18px;
+    font-weight:700;
+    color:#0b0b0b;
+    background:linear-gradient(145deg,#00ff99,#00cc88);
+    border:none;
+    border-radius:12px;
+    margin:10px;
+    cursor:pointer;
+    transition:0.3s;
+    box-shadow:0 6px 20px rgba(0,255,153,0.4);
+  }
+
+  button:hover{
+    transform:translateY(-5px);
+    box-shadow:0 12px 30px rgba(0,255,153,0.6);
+    background:linear-gradient(145deg,#00cc88,#00ff99);
+  }
+
+  span{color:#ff5555;cursor:pointer;}
+  span:hover{text-decoration:underline;}
+</style>
+</head>
+<body>
+
+<div class="container">
+  <h1>Stealth Panel</h1>
+  <p>Selamat datang! Daftar atau login untuk mengakses dashboard dan fitur eksklusif.</p>
+  <div>
+    <button onclick="window.location.href='/login.html'">Login</button>
+    <button onclick="window.location.href='/register.html'">Register</button>
+  </div>
+  <p style="margin-top:20px;">Belum punya akun? <span onclick="window.location.href='/register.html'">Klik disini untuk daftar</span></p>
+</div>
+
+</body>
+</html>

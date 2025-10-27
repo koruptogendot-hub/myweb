@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Login — Stealth Panel</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500&display=swap" rel="stylesheet">
+<style>
+  body{
+    margin:0; padding:0;
+    font-family:'Orbitron',sans-serif;
+    display:flex; justify-content:center; align-items:center;
+    height:100vh;
+    background: linear-gradient(-45deg,#0b0b0b,#111,#1a1a1a,#000);
+    background-size:400% 400%;
+    animation:gradientBG 15s ease infinite;
+    color:#00ff99;
+  }
+
+  @keyframes gradientBG{
+    0%{background-position:0% 50%}
+    50%{background-position:100% 50%}
+    100%{background-position:0% 50%}
+  }
+
+  .login-container{
+    background: rgba(0,0,0,0.7);
+    padding:50px 40px;
+    border-radius:20px;
+    box-shadow: 0 10px 40px rgba(0,255,153,0.3);
+    backdrop-filter: blur(8px);
+    text-align:center;
+    width:320px;
+  }
+
+  h1{
+    color:#00ffcc;
+    margin-bottom:25px;
+    text-shadow:0 0 8px #00ff99;
+  }
+
+  input{
+    width:100%;
+    padding:12px;
+    margin:8px 0;
+    border-radius:10px;
+    border:none;
+    outline:none;
+    background:#0b0b0b;
+    color:#00ff99;
+    font-size:16px;
+    box-shadow:0 4px 8px rgba(0,255,153,0.2);
+  }
+
+  button{
+    width:100%;
+    padding:14px;
+    margin-top:12px;
+    border:none;
+    border-radius:12px;
+    background:linear-gradient(145deg,#00ff99,#00cc88);
+    font-weight:700;
+    font-size:16px;
+    color:#0b0b0b;
+    cursor:pointer;
+    box-shadow:0 6px 20px rgba(0,255,153,0.4);
+    transition:0.3s;
+  }
+
+  button:hover{
+    transform:translateY(-4px);
+    box-shadow:0 10px 30px rgba(0,255,153,0.6);
+    background:linear-gradient(145deg,#00cc88,#00ff99);
+  }
+
+  p{margin-top:15px; font-size:14px; color:#b0f2c2;}
+  p span{color:#ff5555; cursor:pointer;}
+  p span:hover{text-decoration:underline;}
+</style>
+</head>
+<body>
+<div class="login-container">
+  <h1>Login</h1>
+  <input type="email" id="loginEmail" placeholder="Email">
+  <input type="password" id="loginPassword" placeholder="Password">
+  <button onclick="login()">Login</button>
+  <p>Belum punya akun? <span onclick="window.location.href='/register.html'">Register</span></p>
+</div>
+
+<script>
+async function login(){
+  const email = document.getElementById("loginEmail").value.trim();
+  const password = document.getElementById("loginPassword").value.trim();
+  if(!email || !password) return alert("Isi email dan password");
+
+  const res = await fetch("/api/login.js",{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({email,password})
+  });
+  const data = await res.json();
+
+  if(res.ok){
+    localStorage.setItem("userEmail", email);
+    window.location.href="/dashboard.html";
+  }else{
+    alert(data.message || "Login gagal");
+  }
+}
+</script>
+</body>
+</html>
